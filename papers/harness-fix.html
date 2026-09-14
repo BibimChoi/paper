@@ -1,0 +1,917 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>모델 말고 하네스를 고쳐라</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+
+<style>
+/* deck.css — CS329A 계열 슬라이드 덱 공용 스타일
+   라이트/다크 토큰, 슬라이드 레이아웃, 차트 텍스트 롤, 인쇄(1장=1페이지)
+   이 파일 하나를 고치면 세 덱이 같이 바뀝니다. */
+
+/* ═══════════ tokens ═══════════ */
+:root{
+  color-scheme: light;
+  --paper:#f4f6f8;
+  --surface:#fbfcfd;
+  --surface-2:#eaeef2;
+  --ink:#0c1116;
+  --ink-2:#4b545e;
+  --ink-3:#7d8791;
+  --rule:#dde3e9;
+  --rule-strong:#c4ccd5;
+  --accent:#2a78d6;
+  --accent-soft:#e4eefb;
+  --signal:#eb6834;
+  --signal-soft:#fdeae1;
+  --aqua:#1baf7a;
+  --good:#0ca30c;
+  --critical:#d03b3b;
+  --grid:#e4e9ee;
+  --axis:#c4ccd5;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme: dark;
+    --paper:#0c0e11; --surface:#161a1f; --surface-2:#1d2228;
+    --ink:#eef2f6; --ink-2:#a8b2bd; --ink-3:#7d8791;
+    --rule:#272c33; --rule-strong:#39404a;
+    --accent:#3987e5; --accent-soft:#132539;
+    --signal:#d95926; --signal-soft:#2c1a12;
+    --aqua:#199e70; --good:#0ca30c; --critical:#d03b3b;
+    --grid:#22272e; --axis:#39404a;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --paper:#0c0e11; --surface:#161a1f; --surface-2:#1d2228;
+  --ink:#eef2f6; --ink-2:#a8b2bd; --ink-3:#7d8791;
+  --rule:#272c33; --rule-strong:#39404a;
+  --accent:#3987e5; --accent-soft:#132539;
+  --signal:#d95926; --signal-soft:#2c1a12;
+  --aqua:#199e70; --good:#0ca30c; --critical:#d03b3b;
+  --grid:#22272e; --axis:#39404a;
+}
+
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{
+  background:var(--paper);color:var(--ink);
+  font-family:"IBM Plex Sans KR",system-ui,-apple-system,"Malgun Gothic",sans-serif;
+  line-height:1.6;-webkit-font-smoothing:antialiased;overflow:hidden;
+}
+code,.mono{font-family:"IBM Plex Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums}
+
+/* ═══════════ deck shell ═══════════ */
+.deck{height:100vh;height:100dvh;display:flex;flex-direction:column}
+.slide{
+  flex:1;min-height:0;display:none;
+  padding:clamp(20px,3.4vmin,52px) clamp(20px,4.6vmin,72px) clamp(52px,6vmin,72px);
+  flex-direction:column;gap:clamp(10px,1.8vmin,24px);
+}
+.slide.on{display:flex}
+
+/* slide head */
+.eyebrow{
+  font-family:"IBM Plex Mono",monospace;font-weight:600;
+  font-size:clamp(10px,1.25vmin,13px);letter-spacing:.16em;text-transform:uppercase;
+  color:var(--ink-3);
+}
+.slide h2{
+  margin:0;font-weight:600;letter-spacing:-.022em;line-height:1.18;
+  font-size:clamp(21px,4.1vmin,44px);text-wrap:balance;
+}
+.slide h2 em{font-style:normal;color:var(--accent)}
+.slide h2 .warn{color:var(--signal)}
+.lead{
+  margin:0;color:var(--ink-2);max-width:60ch;
+  font-size:clamp(13px,1.85vmin,20px);line-height:1.62;
+}
+.lead b,.lead strong{color:var(--ink);font-weight:600}
+
+/* figure area fills remaining height */
+.fig{flex:1;min-height:0;display:flex;align-items:center;justify-content:center}
+.fig svg{width:100%;height:100%;max-height:100%;display:block}
+.fig.pad{padding:0 clamp(0px,2vmin,40px)}
+
+/* bullets */
+ul.pts{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:clamp(7px,1.5vmin,18px)}
+ul.pts li{
+  position:relative;padding-left:clamp(20px,2.6vmin,32px);
+  font-size:clamp(13px,2vmin,22px);line-height:1.55;color:var(--ink-2);max-width:56ch;
+}
+ul.pts li::before{
+  content:"";position:absolute;left:0;top:.62em;
+  width:clamp(7px,1vmin,11px);height:clamp(7px,1vmin,11px);border-radius:2px;background:var(--accent);
+}
+ul.pts li strong{color:var(--ink);font-weight:600}
+ul.pts li.warn::before{background:var(--signal)}
+
+/* legend row */
+.legend{display:flex;flex-wrap:wrap;gap:clamp(10px,2vmin,24px);justify-content:center}
+.legend span{display:inline-flex;align-items:center;gap:7px;font-size:clamp(11px,1.5vmin,15px);color:var(--ink-2)}
+.sw{width:clamp(12px,1.6vmin,18px);height:3px;border-radius:2px;flex:none}
+.sw.box{height:clamp(10px,1.3vmin,13px);border-radius:2px}
+
+/* callout */
+.punch{
+  background:var(--accent-soft);border:1px solid color-mix(in srgb,var(--accent) 28%,transparent);
+  border-radius:4px;padding:clamp(12px,1.9vmin,22px) clamp(14px,2.2vmin,26px);
+}
+.punch p{margin:0;font-size:clamp(13px,2vmin,22px);font-weight:500;line-height:1.55;max-width:58ch}
+.punch.warn{background:var(--signal-soft);border-color:color-mix(in srgb,var(--signal) 30%,transparent)}
+.cite{font-family:"IBM Plex Mono",monospace;font-size:.78em;color:var(--ink-3);white-space:nowrap}
+
+/* cover */
+.cover{justify-content:center;gap:clamp(14px,2.6vmin,34px)}
+.cover h1{
+  margin:0;font-weight:700;letter-spacing:-.03em;line-height:1.1;
+  font-size:clamp(30px,7.4vmin,86px);text-wrap:balance;
+}
+.cover .meta{display:flex;flex-wrap:wrap;gap:clamp(12px,2vmin,28px);align-items:baseline;color:var(--ink-3);
+  font-family:"IBM Plex Mono",monospace;font-size:clamp(11px,1.5vmin,16px)}
+.keys{display:flex;flex-wrap:wrap;gap:clamp(8px,1.4vmin,16px);margin-top:clamp(6px,1.4vmin,18px)}
+kbd{
+  font-family:"IBM Plex Mono",monospace;font-size:clamp(10px,1.3vmin,13px);
+  background:var(--surface);border:1px solid var(--rule-strong);border-bottom-width:2px;
+  border-radius:3px;padding:2px 7px;color:var(--ink-2);
+}
+.keys span{font-size:clamp(11px,1.4vmin,14px);color:var(--ink-3);display:inline-flex;align-items:center;gap:6px}
+
+/* agenda */
+.agenda{display:grid;gap:1px;background:var(--rule);border:1px solid var(--rule);border-radius:4px;overflow:hidden}
+.agenda div{background:var(--surface);padding:clamp(9px,1.6vmin,18px) clamp(12px,2vmin,22px);
+  display:grid;grid-template-columns:clamp(28px,3.4vmin,44px) 1fr;gap:clamp(8px,1.6vmin,18px);align-items:baseline}
+.agenda b{font-family:"IBM Plex Mono",monospace;color:var(--accent);font-weight:600;font-size:clamp(11px,1.5vmin,16px)}
+.agenda p{margin:0;font-size:clamp(12.5px,1.85vmin,20px);color:var(--ink-2)}
+.agenda p strong{color:var(--ink);font-weight:600}
+
+/* Q&A appendix slides */
+.qas{display:flex;flex-direction:column;gap:clamp(10px,1.9vmin,22px);overflow-y:auto;min-height:0;flex:1}
+.qa{border-left:3px solid var(--rule-strong);padding-left:clamp(12px,1.9vmin,20px)}
+.qa .q{margin:0 0 .3em;font-size:clamp(13px,1.95vmin,21px);font-weight:600;line-height:1.4}
+.qa .q::before{content:"Q ";font-family:"IBM Plex Mono",monospace;color:var(--signal)}
+.qa .a{margin:0;font-size:clamp(12px,1.7vmin,18px);color:var(--ink-2);line-height:1.58}
+.qa .a::before{content:"A ";font-family:"IBM Plex Mono",monospace;color:var(--accent);font-weight:600}
+.qa .a strong{color:var(--ink);font-weight:600}
+
+/* two-up */
+.two{flex:1;min-height:0;display:grid;grid-template-columns:1fr 1fr;gap:clamp(14px,2.6vmin,34px)}
+.two>div{min-width:0;display:flex;flex-direction:column;gap:clamp(6px,1.2vmin,14px)}
+.two .cap{font-size:clamp(11px,1.5vmin,15px);color:var(--ink-3);line-height:1.5;margin:0}
+.two h3{margin:0;font-size:clamp(13px,1.8vmin,19px);font-weight:600}
+
+body.no-notes 
+/* ═══════════ chrome ═══════════ */
+.bar{
+  position:fixed;left:0;right:0;bottom:0;height:34px;
+  display:flex;align-items:center;gap:14px;padding:0 14px;
+  background:var(--paper);border-top:1px solid var(--rule);z-index:20;
+}
+.prog{flex:1;height:3px;background:var(--rule);border-radius:2px;overflow:hidden}
+.prog i{display:block;height:100%;background:var(--accent);width:0;transition:width .18s}
+.bar .num{font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:var(--ink-3);font-variant-numeric:tabular-nums}
+.bar button{
+  font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--ink-2);
+  background:var(--surface);border:1px solid var(--rule-strong);border-radius:3px;
+  padding:3px 9px;cursor:pointer;line-height:1.5;
+}
+.bar button:hover{border-color:var(--accent);color:var(--accent)}
+.bar button:focus-visible,.ov button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* overview */
+.ov{
+  position:fixed;inset:0;z-index:40;background:var(--paper);
+  padding:26px;overflow-y:auto;display:none;
+}
+.ov.on{display:block}
+.ov h3{margin:0 0 18px;font-size:15px;font-weight:600;letter-spacing:-.01em}
+.ov .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
+.ov button{
+  text-align:left;background:var(--surface);border:1px solid var(--rule);border-radius:4px;
+  padding:12px 14px;cursor:pointer;display:flex;flex-direction:column;gap:5px;
+  font-family:inherit;color:var(--ink);
+}
+.ov button:hover{border-color:var(--accent)}
+.ov button.cur{border-color:var(--accent);background:var(--accent-soft)}
+.ov button .n{font-family:"IBM Plex Mono",monospace;font-size:10.5px;color:var(--accent);font-weight:600}
+.ov button .t{font-size:13px;line-height:1.4;font-weight:500}
+.ov button .k{font-family:"IBM Plex Mono",monospace;font-size:10px;color:var(--ink-3)}
+
+/* svg text roles */
+.ax{font-family:"IBM Plex Mono",monospace;font-size:11px;fill:var(--ink-3)}
+.axl{font-family:"IBM Plex Sans KR",sans-serif;font-size:12px;fill:var(--ink-3)}
+.dl{font-family:"IBM Plex Mono",monospace;font-size:13px;font-weight:600;fill:var(--ink)}
+.dl-s{font-family:"IBM Plex Sans KR",sans-serif;font-size:12px;font-weight:500;fill:var(--ink-2)}
+.anno{font-family:"IBM Plex Sans KR",sans-serif;font-size:12.5px;font-weight:500;fill:var(--ink-2)}
+.big{font-family:"IBM Plex Mono",monospace;font-weight:600;fill:var(--ink)}
+
+@media (max-width:700px){
+  .two{grid-template-columns:1fr}
+  }
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+/* ═══════════ print: one slide per page ═══════════ */
+@media print{
+  @page{size:A4 landscape;margin:10mm}
+  :root{
+    --paper:#fff;--surface:#fff;--surface-2:#f2f5f8;
+    --ink:#000;--ink-2:#333;--ink-3:#666;--rule:#ccc;--rule-strong:#999;
+  }
+  html,body{height:auto;overflow:visible;background:#fff}
+  .deck{height:auto;display:block}
+  .slide{display:flex!important;height:185mm;page-break-after:always;break-after:page;padding:6mm}
+  .slide:last-of-type{page-break-after:auto}
+    .bar,.ov{display:none!important}
+  .qas{overflow:visible}
+}
+
+/* ---------- 출처 링크 ---------- */
+.srcrow{display:flex;flex-wrap:wrap;gap:clamp(10px,1.8vmin,22px);align-items:center;
+  padding-top:clamp(4px,1vmin,10px)}
+.srclink{
+  display:inline-flex;align-items:center;gap:8px;
+  font-family:"IBM Plex Mono",ui-monospace,monospace;
+  font-size:clamp(11px,1.5vmin,15px);
+  color:var(--accent);text-decoration:none;
+  border:1px solid color-mix(in srgb,var(--accent) 34%,transparent);
+  background:var(--accent-soft);
+  border-radius:3px;padding:6px 12px;line-height:1.4;
+}
+.srclink:hover{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,transparent)}
+.srclink:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.srclink .k{color:var(--ink-3);font-weight:500}
+</style>
+</head>
+<body>
+
+<div class="deck" id="deck">
+
+<!-- 01 cover -->
+<section class="slide cover" data-title="표지">
+  <div>
+    <span class="eyebrow">arXiv 2606.06324 · 중국과학원 소프트웨어연구소 외 · 2026.06</span>
+    <h1>모델 말고<br>하네스를 고쳐라</h1>
+  </div>
+  <p class="lead" style="font-size:clamp(15px,2.3vmin,26px)">
+    에이전트가 실패했을 때, <b>정작 어디를 고쳐야 하는지</b> 짚어주는 방법이 없었습니다.
+    이 논문은 <b>실패한 실행 트레이스</b>에서 그걸 찾아냅니다.
+  </p>
+  <div class="meta">
+    <span>From Failed Trajectories to Reliable LLM Agents</span><span>Chen, Wang et al.</span><span>2026년 7월 2일 개정</span>
+  </div>
+  <div class="keys">
+    <span><kbd>→</kbd><kbd>Space</kbd> 다음</span><span><kbd>←</kbd> 이전</span>
+    <span><kbd>O</kbd> 목차</span><span><kbd>F</kbd> 전체화면</span>
+  </div>
+  </section>
+
+<!-- 02 source -->
+<section class="slide" data-title="논문 소개 · 출처">
+  <span class="eyebrow">논문 소개</span>
+  <h2>From Failed Trajectories to Reliable LLM Agents:<br>Diagnosing and Repairing Harness Flaws</h2>
+  <div class="fig pad" style="align-items:stretch">
+    <svg viewBox="0 0 760 268" role="img" aria-label="논문 서지 정보: 저자, 소속, 게재 상태, arXiv 번호, 코드 저장소">
+      <text class="ax" x="8" y="18" fill="var(--accent)">저자</text>
+      <text class="axl" x="8" y="42" style="font-size:12px">Mengzhuo Chen · Junjie Wang · Zhe Liu · Yawen Wang · Haiming Zheng · Qing Wang</text>
+      <line x1="8" y1="58" x2="752" y2="58" stroke="var(--rule)"/>
+
+      <text class="ax" x="8" y="82" fill="var(--accent)">소속</text>
+      <text class="axl" x="8" y="106" style="font-size:12px"><tspan font-weight="600" fill="var(--ink)">중국과학원 소프트웨어연구소</tspan> · 복잡시스템 모델링·시뮬레이션 기술 국가중점연구실</text>
+      <text class="axl" x="8" y="126" style="font-size:12px">중국과학원대학 · 톈진대학 컴퓨터과학기술학원</text>
+      <line x1="8" y1="142" x2="752" y2="142" stroke="var(--rule)"/>
+
+      <text class="ax" x="8" y="166" fill="var(--accent)">게재</text>
+      <text class="axl" x="8" y="190" style="font-size:12px"><tspan font-weight="600" fill="var(--ink)">arXiv:2606.06324v2 [cs.SE]</tspan> &nbsp;·&nbsp; 2026년 6월 4일 제출, 7월 2일 개정 &nbsp;·&nbsp; <tspan font-weight="600" fill="var(--signal)">Preprint (미심사)</tspan></text>
+      <text class="axl" x="8" y="210" style="font-size:10.5px">분류가 cs.AI가 아니라 <tspan font-weight="600" fill="var(--ink)">cs.SE(소프트웨어 공학)</tspan>입니다 — 이 논문의 성격을 그대로 보여줍니다</text>
+      <line x1="8" y1="226" x2="752" y2="226" stroke="var(--rule)"/>
+
+      <text class="ax" x="8" y="250" style="font-size:11px" fill="var(--accent)">공개 자료</text>
+      <text class="axl" x="240" y="250" style="font-size:12px">코드: <tspan font-weight="600" fill="var(--ink)">github.com/HarnessFix/HarnessFix</tspan> &nbsp;·&nbsp; <tspan font-weight="600" fill="var(--ink)">arxiv.org/abs/2606.06324</tspan></text>
+    </svg>
+  </div>
+  
+  <div class="srcrow">
+    <a class="srclink" href="https://arxiv.org/abs/2606.06324" target="_blank" rel="noopener"><span class="k">논문</span> arxiv.org/abs/2606.06324</a>
+    <a class="srclink" href="https://arxiv.org/pdf/2606.06324" target="_blank" rel="noopener"><span class="k">PDF</span> arxiv.org/pdf/2606.06324</a>
+    <a class="srclink" href="https://github.com/HarnessFix/HarnessFix" target="_blank" rel="noopener"><span class="k">코드</span> github.com/HarnessFix/HarnessFix</a>
+  </div>
+</section>
+
+<!-- 03 purpose -->
+<section class="slide" data-title="목적 — 이 논문이 풀려는 문제">
+  <span class="eyebrow">목적</span>
+  <h2>고쳐야 할 곳은 <em>모델 바깥</em>에 있는데, 그게 어디인지 짚을 방법이 없다</h2>
+  <div class="fig pad">
+    <svg viewBox="0 0 760 244" role="img" aria-label="실패한 궤적에서 어느 하네스 구현 요소가 원인인지 매핑할 수 없다는 문제">
+      <defs>
+        <marker id="pq" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,1 L9,5 L0,9 z" fill="var(--axis)"/>
+        </marker>
+      </defs>
+
+      <text class="ax" x="8" y="18">실패한 실행 궤적</text>
+      <rect x="8" y="30" width="66" height="30" rx="3" fill="var(--good)" opacity=".75"/>
+      <rect x="80" y="30" width="66" height="30" rx="3" fill="var(--good)" opacity=".75"/>
+      <rect x="152" y="30" width="66" height="30" rx="3" fill="var(--good)" opacity=".75"/>
+      <rect x="224" y="30" width="66" height="30" rx="3" fill="var(--warning)" opacity=".8"/>
+      <rect x="296" y="30" width="66" height="30" rx="3" fill="var(--critical)"/>
+      <text class="axl" x="329" y="50" text-anchor="middle" fill="#fff" style="font-size:10.5px">실패</text>
+      <text class="axl" x="8" y="78" style="font-size:10.5px">자연어 추론 · 도구 호출 · 환경 응답 · 중간 산출물 · 상태 전이가 뒤섞여 있음</text>
+
+      <path d="M185,92 L185,120" stroke="var(--signal)" stroke-width="2" marker-end="url(#pq)"/>
+      <text class="big" x="212" y="116" fill="var(--signal)" style="font-size:22px">?</text>
+      <text class="anno" x="232" y="114" fill="var(--signal)" font-weight="600">어느 스텝이 책임이고, 그 스텝을 그렇게 만든 건 무엇인가</text>
+
+      <text class="ax" x="8" y="150">하네스 구현 — 고칠 수 있는 것들</text>
+      <g class="axl" style="font-size:10.5px">
+        <rect x="8" y="162" width="104" height="26" rx="3" fill="var(--surface-2)" stroke="var(--rule-strong)"/><text x="60" y="179" text-anchor="middle">소스 코드</text>
+        <rect x="118" y="162" width="104" height="26" rx="3" fill="var(--surface-2)" stroke="var(--rule-strong)"/><text x="170" y="179" text-anchor="middle">프롬프트 템플릿</text>
+        <rect x="228" y="162" width="104" height="26" rx="3" fill="var(--surface-2)" stroke="var(--rule-strong)"/><text x="280" y="179" text-anchor="middle">도구 스펙</text>
+        <rect x="338" y="162" width="104" height="26" rx="3" fill="var(--surface-2)" stroke="var(--rule-strong)"/><text x="390" y="179" text-anchor="middle">설정 파일</text>
+        <rect x="448" y="162" width="104" height="26" rx="3" fill="var(--surface-2)" stroke="var(--rule-strong)"/><text x="500" y="179" text-anchor="middle">어댑터</text>
+        <rect x="558" y="162" width="92" height="26" rx="3" fill="var(--surface-2)" stroke="var(--rule-strong)"/><text x="604" y="179" text-anchor="middle">계측 훅</text>
+        <rect x="656" y="162" width="96" height="26" rx="3" fill="var(--surface-2)" stroke="var(--rule-strong)"/><text x="704" y="179" text-anchor="middle">검증 스크립트</text>
+      </g>
+
+      <line x1="8" y1="204" x2="752" y2="204" stroke="var(--rule)"/>
+      <text class="anno" x="8" y="228">전통 소프트웨어는 로직이 <tspan font-weight="600" fill="var(--ink)">제어 흐름과 자료구조에 명시적으로 인코딩</tspan>돼 있어 실패를 코드 위치로 되짚을 수 있습니다. 에이전트는 아닙니다.</text>
+    </svg>
+  </div>
+  <div class="punch warn">
+    <p>에이전트 행동은 <strong>런타임에 모델 추론으로 결정</strong>되고, 프롬프트·검색된 맥락·도구 인터페이스·오케스트레이션 정책이 그걸 빚습니다.
+    그래서 <strong>실패를 구현의 특정 위치로 직접 매핑할 수 없습니다.</strong> 이 논문이 푸는 문제가 정확히 이것입니다.</p>
+  </div>
+  </section>
+
+<!-- 04 harness 7 layers -->
+<section class="slide" data-title="전제 — 하네스 7계층">
+  <span class="eyebrow">전제 · 용어</span>
+  <h2>하네스 = 모델을 감싸고 <em>행동 방식을 정하는</em> 런타임 인프라</h2>
+  <p class="lead">
+    기존 하네스 엔지니어링 연구의 <b>7계층 분류</b>를 그대로 씁니다. 앞으로 “어느 계층의 결함인가”가 계속 나오니 여기서 한 번 보고 갑니다.
+  </p>
+  <div class="fig pad">
+    <svg viewBox="0 0 760 244" role="img" aria-label="하네스의 일곱 계층: 실행, 도구, 맥락, 생명주기, 관측, 검증, 거버넌스">
+      <rect x="8" y="4" width="744" height="30" rx="3" fill="var(--surface-2)" stroke="var(--rule-strong)"/>
+      <text class="dl" x="22" y="24" style="font-size:12px">Execution</text>
+      <text class="axl" x="196" y="24" style="font-size:11px">샌드박스·격리·재현 가능한 실행 환경, 자율성의 경계</text>
+
+      <rect x="8" y="38" width="744" height="30" rx="3" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1.5"/>
+      <text class="dl" x="22" y="58" style="font-size:12px" fill="var(--accent)">Tooling</text>
+      <text class="axl" x="196" y="58" style="font-size:11px">도구 발견·기술·선택·호출 — 스키마, 문서, <tspan font-weight="600" fill="var(--ink)">에러 피드백</tspan></text>
+
+      <rect x="8" y="72" width="744" height="30" rx="3" fill="var(--surface-2)" stroke="var(--rule-strong)"/>
+      <text class="dl" x="22" y="92" style="font-size:12px">Context / Memory</text>
+      <text class="axl" x="196" y="92" style="font-size:11px">매 스텝 모델이 보는 것 — 윈도우, 세션 상태, 요약, 검색 근거, 영속 메모리</text>
+
+      <rect x="8" y="106" width="744" height="30" rx="3" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1.5"/>
+      <text class="dl" x="22" y="126" style="font-size:12px" fill="var(--accent)">Lifecycle</text>
+      <text class="axl" x="196" y="126" style="font-size:11px">think-act-observe 루프, 재시도, 태스크 상태 관리, 조율, <tspan font-weight="600" fill="var(--ink)">종료 조건</tspan></text>
+
+      <rect x="8" y="140" width="744" height="30" rx="3" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1.5"/>
+      <text class="dl" x="22" y="160" style="font-size:12px" fill="var(--accent)">Observability</text>
+      <text class="axl" x="196" y="160" style="font-size:11px">트레이스·로그·도구 호출·에러·비용을 <tspan font-weight="600" fill="var(--ink)">진단 가능한 수준으로</tspan> 기록</text>
+
+      <rect x="8" y="174" width="744" height="30" rx="3" fill="var(--surface-2)" stroke="var(--rule-strong)"/>
+      <text class="dl" x="22" y="194" style="font-size:12px">Verification</text>
+      <text class="axl" x="196" y="194" style="font-size:11px">준비 검사, 중간 검증, 최종 평가, <tspan font-weight="600" fill="var(--ink)">회귀 테스트</tspan></text>
+
+      <rect x="8" y="208" width="744" height="30" rx="3" fill="var(--surface-2)" stroke="var(--rule-strong)"/>
+      <text class="dl" x="22" y="228" style="font-size:12px">Governance</text>
+      <text class="axl" x="196" y="228" style="font-size:11px">권한, 신원, 정책, 승인, 감사 추적 — 에이전트 권한의 제약</text>
+    </svg>
+  </div>
+  </section>
+
+<!-- 05 why existing fails -->
+<section class="slide" data-title="기존 방식이 왜 안 되나">
+  <span class="eyebrow">목적 · 보강</span>
+  <h2>기존 자기개선은 <span class="warn">어디가 문제인지 먼저 밝히지 않습니다</span></h2>
+  <div class="two">
+    <div>
+      <h3>런타임 감독형</h3>
+      <ul class="pts" style="gap:clamp(6px,1.2vmin,14px)">
+        <li style="font-size:clamp(12px,1.8vmin,20px)">실행 중에 가볍게 감시하고 교정해 문제를 <strong>우회</strong>합니다</li>
+        <li class="warn" style="font-size:clamp(12px,1.8vmin,20px)">겉보기 성능은 오르지만 <strong>원인이 된 결함은 그대로 남습니다</strong></li>
+      </ul>
+    </div>
+    <div>
+      <h3>결과 주도형</h3>
+      <ul class="pts" style="gap:clamp(6px,1.2vmin,14px)">
+        <li style="font-size:clamp(12px,1.8vmin,20px)">최종 점수·성공률·효율 지표를 보고 프롬프트·워크플로·하네스 로직을 최적화합니다</li>
+        <li class="warn" style="font-size:clamp(12px,1.8vmin,20px)"><strong>어느 계층이 왜 실패했는지</strong>를 먼저 묻지 않습니다</li>
+      </ul>
+    </div>
+  </div>
+  <div class="punch warn">
+    <p>둘 다 같은 결과로 이어집니다 — <strong>개선이 넓고, 간접적이고, 범위가 엉성해집니다.</strong>
+    그래서 이 논문은 순서를 뒤집습니다: <strong>먼저 진단하고, 그다음 좁게 고친다.</strong></p>
+  </div>
+  </section>
+
+<!-- 06 contributions -->
+<section class="slide" data-title="이 논문의 기여 2가지">
+  <span class="eyebrow">구성 예고</span>
+  <h2>이 논문은 <em>두 가지</em>를 합니다</h2>
+  <div class="fig pad">
+    <svg viewBox="0 0 760 232" role="img" aria-label="이 논문의 두 가지 기여: 하네스 결함 실증 조사와 HarnessFix 프레임워크">
+      <rect x="8" y="16" width="360" height="160" rx="3" fill="var(--surface-2)" stroke="var(--rule-strong)"/>
+      <text class="big" x="34" y="56" fill="var(--accent)" style="font-size:30px">①</text>
+      <text class="dl" x="80" y="52" style="font-size:15px">하네스 결함 실증 조사</text>
+      <text class="axl" x="34" y="88" style="font-size:12px">실제 LLM 에이전트 저장소 <tspan font-weight="600" fill="var(--ink)">30개</tspan>를 조사해</text>
+      <text class="axl" x="34" y="110" style="font-size:12px">결함이 <tspan font-weight="600" fill="var(--ink)">7계층 중 어디에 몰리는지</tspan> 분포를 냅니다</text>
+      <text class="axl" x="34" y="132" style="font-size:12px">하네스 관련 레코드 <tspan font-weight="600" fill="var(--ink)">26,174건</tspan> 수집</text>
+      <text class="axl" x="34" y="160" style="font-size:11px" fill="var(--accent)">→ 07장에서 결과</text>
+
+      <rect x="392" y="16" width="360" height="160" rx="3" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1.5"/>
+      <text class="big" x="418" y="56" fill="var(--accent)" style="font-size:30px">②</text>
+      <text class="dl" x="464" y="52" style="font-size:15px">HarnessFix 프레임워크</text>
+      <text class="axl" x="418" y="88" style="font-size:12px">실패 트레이스를 <tspan font-weight="600" fill="var(--ink)">진단 증거</tspan>로 컴파일해</text>
+      <text class="axl" x="418" y="110" style="font-size:12px">결함을 짚고, <tspan font-weight="600" fill="var(--ink)">범위를 좁혀</tspan> 하네스를 고칩니다</text>
+      <text class="axl" x="418" y="132" style="font-size:12px">벤치마크 4종 · 모델 5종으로 검증</text>
+      <text class="axl" x="418" y="160" style="font-size:11px" fill="var(--accent)">→ 08장 방법, 10~13장 결과</text>
+
+      <line x1="8" y1="196" x2="752" y2="196" stroke="var(--rule)"/>
+      <text class="anno" x="8" y="222">저자들은 ①을 <tspan font-weight="600" fill="var(--ink)">“실제 LLM 에이전트의 하네스 결함에 대한 최초의 실증 연구”</tspan>라고 내세웁니다. 방법론만큼이나 이 조사 자체가 기여라는 주장입니다.</text>
+    </svg>
+  </div>
+  </section>
+
+<!-- 07 contribution 1 -->
+<section class="slide" data-title="기여① 결함이 어디 몰려 있나">
+  <span class="eyebrow">기여 ① · 실증 조사</span>
+  <h2>에이전트 <em>30개 중 29개</em>가 같은 세 계층에서 샌다</h2>
+  <div class="fig pad">
+    <svg viewBox="0 0 760 250" role="img" aria-label="하네스 결함이 일곱 계층 전부에서 나오지만 생명주기 도구 관측 세 계층이 가장 빈번하다">
+      <text class="ax" x="8" y="18">7계층별 결함 분포 — 저장소 30개 조사</text>
+      <line x1="170" y1="30" x2="170" y2="212" stroke="var(--axis)" stroke-width="1.5"/>
+
+      <rect x="170" y="40" width="420" height="24" rx="3" fill="var(--signal)"/>
+      <text class="dl-s" x="162" y="57" text-anchor="end" style="font-size:11.5px" font-weight="600">Lifecycle</text>
+      <rect x="170" y="70" width="400" height="24" rx="3" fill="var(--signal)"/>
+      <text class="dl-s" x="162" y="87" text-anchor="end" style="font-size:11.5px" font-weight="600">Tooling</text>
+      <rect x="170" y="100" width="382" height="24" rx="3" fill="var(--signal)"/>
+      <text class="dl-s" x="162" y="117" text-anchor="end" style="font-size:11.5px" font-weight="600">Observability</text>
+
+      <rect x="170" y="130" width="232" height="24" rx="3" fill="var(--ink-3)" opacity=".6"/>
+      <text class="dl-s" x="162" y="147" text-anchor="end" style="font-size:11.5px">Context / Memory</text>
+      <rect x="170" y="160" width="206" height="24" rx="3" fill="var(--ink-3)" opacity=".6"/>
+      <text class="dl-s" x="162" y="177" text-anchor="end" style="font-size:11.5px">Verification</text>
+      <rect x="170" y="190" width="150" height="24" rx="3" fill="var(--ink-3)" opacity=".6"/>
+      <text class="dl-s" x="162" y="207" text-anchor="end" style="font-size:11.5px">Execution · Governance</text>
+
+      <rect x="604" y="40" width="148" height="84" rx="3" fill="var(--signal-soft)" stroke="var(--signal)"/>
+      <text class="dl" x="678" y="70" text-anchor="middle" fill="var(--signal)" style="font-size:22px">29 / 30</text>
+      <text class="axl" x="678" y="94" text-anchor="middle" style="font-size:10.5px">에이전트가 이 세 계층에</text>
+      <text class="axl" x="678" y="110" text-anchor="middle" style="font-size:10.5px">관련된 결함을 갖고 있었습니다</text>
+
+      <line x1="8" y1="228" x2="752" y2="228" stroke="var(--rule)"/>
+      <text class="anno" x="8" y="246">결함은 <tspan font-weight="600" fill="var(--ink)">7계층 전부</tspan>에서 나옵니다. 다만 지배적 계층은 저장소 성격에 따라 갈립니다 — <tspan font-weight="600" fill="var(--ink)">장기 실행 에이전트는 Lifecycle, 벤치마크 대응 하네스는 Verification.</tspan></text>
+    </svg>
+  </div>
+  <div class="punch">
+    <p>막대 길이는 “Lifecycle · Tooling · Observability가 가장 빈번”이라는 논문 서술을 반영한 <strong>상대 비교용</strong>입니다.
+    정확한 수치는 논문 Figure 1을 보셔야 합니다. <strong>29/30은 실측값입니다.</strong></p>
+  </div>
+  </section>
+
+<!-- 08 contribution 2 : method -->
+<section class="slide" data-title="기여② HarnessFix가 하는 일">
+  <span class="eyebrow">기여 ② · 방법</span>
+  <h2>실패 트레이스 → 진단 → <em>범위를 좁힌 수리</em> → 회귀 검증</h2>
+  <p class="lead">
+    핵심 설계는 둘입니다 — <b>자유 편집이 아니라 결함별로 허용된 “수리 연산자”만 쓰고</b>,
+    고친 게 다른 걸 깨뜨렸는지 <b>검증셋으로 확인한 뒤에만 받아들입니다.</b>
+  </p>
+  <div class="fig pad">
+    <svg viewBox="0 0 760 236" role="img" aria-label="HarnessFix의 네 단계 파이프라인">
+      <defs>
+        <marker id="hf" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,1 L9,5 L0,9 z" fill="var(--axis)"/>
+        </marker>
+      </defs>
+
+      <rect x="8" y="48" width="150" height="80" rx="3" fill="var(--surface-2)" stroke="var(--rule-strong)"/>
+      <text class="dl" x="83" y="76" text-anchor="middle" style="font-size:12.5px">실패 트레이스</text>
+      <text class="axl" x="83" y="98" text-anchor="middle" style="font-size:10.5px">+ 하네스 산출물</text>
+      <text class="axl" x="83" y="114" text-anchor="middle" style="font-size:10.5px">(코드·프롬프트·설정)</text>
+      <path d="M162,88 L188,88" stroke="var(--axis)" stroke-width="1.5" marker-end="url(#hf)"/>
+
+      <rect x="192" y="40" width="160" height="96" rx="3" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1.5"/>
+      <text class="dl" x="272" y="68" text-anchor="middle" fill="var(--accent)" style="font-size:13px">HTIR</text>
+      <text class="axl" x="272" y="88" text-anchor="middle" style="font-size:10.5px">하네스 인지 중간표현</text>
+      <text class="axl" x="272" y="106" text-anchor="middle" style="font-size:10.5px">파편화된 증거를 정규화</text>
+      <text class="axl" x="272" y="122" text-anchor="middle" style="font-size:10.5px">스텝 단위 데이터·제어 흐름</text>
+      <path d="M356,88 L382,88" stroke="var(--axis)" stroke-width="1.5" marker-end="url(#hf)"/>
+
+      <rect x="386" y="48" width="152" height="80" rx="3" fill="var(--surface-2)" stroke="var(--rule-strong)"/>
+      <text class="dl" x="462" y="74" text-anchor="middle" style="font-size:12.5px">결함 귀속</text>
+      <text class="axl" x="462" y="96" text-anchor="middle" style="font-size:10.5px">책임 스텝 · 근본 원인</text>
+      <text class="axl" x="462" y="112" text-anchor="middle" style="font-size:10.5px">구현 앵커 · 해당 계층</text>
+      <path d="M542,88 L568,88" stroke="var(--axis)" stroke-width="1.5" marker-end="url(#hf)"/>
+
+      <rect x="572" y="48" width="180" height="80" rx="3" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1.5"/>
+      <text class="dl" x="662" y="74" text-anchor="middle" fill="var(--accent)" style="font-size:12.5px">범위를 좁힌 수리</text>
+      <text class="axl" x="662" y="96" text-anchor="middle" style="font-size:10.5px">결함별 수리 명세 아래</text>
+      <text class="axl" x="662" y="112" text-anchor="middle" style="font-size:10.5px">패치 생성 (자유 편집 아님)</text>
+
+      <path d="M662,132 L662,158 L272,158" stroke="var(--signal)" stroke-width="1.5" stroke-dasharray="5 4"/>
+      <rect x="196" y="166" width="300" height="42" rx="3" fill="var(--signal-soft)" stroke="var(--signal)"/>
+      <text class="dl" x="346" y="185" text-anchor="middle" fill="var(--signal)" style="font-size:12px">회귀 인지 검증으로 수용/기각</text>
+      <text class="axl" x="346" y="201" text-anchor="middle" style="font-size:10.5px">개선이 부족하거나 회귀가 크면 거부하고 기록</text>
+      <path d="M196,187 L170,187 L170,132" stroke="var(--signal)" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#hf)"/>
+
+      <text class="anno" x="8" y="230">거부된 시도는 기록되어 <tspan font-weight="600" fill="var(--ink)">다음 반복이 같은 무효한 변경을 다시 제안하지 못하게</tspan> 막습니다.</text>
+    </svg>
+  </div>
+  </section>
+
+<!-- 09 experimental design -->
+<section class="slide" data-title="무엇을 어떻게 물었나">
+  <span class="eyebrow">실험 설계</span>
+  <h2>연구 질문 <em>4개</em>, 벤치마크 4종, 모델 5종</h2>
+  <div class="fig pad">
+    <svg viewBox="0 0 760 268" role="img" aria-label="연구 질문 네 개와 실험 설정">
+      <text class="ax" x="8" y="16" fill="var(--accent)">연구 질문</text>
+      <g>
+        <rect x="8" y="26" width="366" height="30" rx="3" fill="var(--accent-soft)" stroke="var(--accent)"/>
+        <text class="dl" x="22" y="46" fill="var(--accent)" style="font-size:12px">RQ1</text>
+        <text class="axl" x="66" y="46" style="font-size:11px">성능과 토큰 효율이 실제로 나아지나</text>
+
+        <rect x="8" y="60" width="366" height="30" rx="3" fill="var(--accent-soft)" stroke="var(--accent)"/>
+        <text class="dl" x="22" y="80" fill="var(--accent)" style="font-size:12px">RQ2</text>
+        <text class="axl" x="66" y="80" style="font-size:11px">실패 진단을 제대로 만들어내나</text>
+
+        <rect x="8" y="94" width="366" height="30" rx="3" fill="var(--accent-soft)" stroke="var(--accent)"/>
+        <text class="dl" x="22" y="114" fill="var(--accent)" style="font-size:12px">RQ3</text>
+        <text class="axl" x="66" y="114" style="font-size:11px">설계 선택들이 각각 기여하나 (어블레이션)</text>
+
+        <rect x="8" y="128" width="366" height="30" rx="3" fill="var(--accent-soft)" stroke="var(--accent)"/>
+        <text class="dl" x="22" y="148" fill="var(--accent)" style="font-size:12px">RQ4</text>
+        <text class="axl" x="66" y="148" style="font-size:11px">한 모델에서 만든 수리가 다른 모델로 옮겨가나</text>
+      </g>
+
+      <line x1="390" y1="8" x2="390" y2="196" stroke="var(--rule)"/>
+
+      <text class="ax" x="406" y="16" fill="var(--accent)">벤치마크 4종 — 성격이 서로 다름</text>
+      <g class="axl" style="font-size:11px">
+        <text x="406" y="38">GAIA — 개방형 리서치 QA</text>
+        <text x="406" y="58">SWE-Bench Verified — 저장소 수준 코드 수정</text>
+        <text x="406" y="78">AppWorld — 상태를 가진 앱 자동화</text>
+        <text x="406" y="98">Terminal-Bench 2.0 — 터미널 워크플로</text>
+      </g>
+      <text class="ax" x="406" y="124" fill="var(--accent)">모델 5종</text>
+      <text class="axl" x="406" y="146" style="font-size:11px">GPT-5 mini · Claude Sonnet 4.5 · DeepSeek V3.2</text>
+      <text class="axl" x="406" y="164" style="font-size:11px">Qwen3.5 Plus · Gemini 3 Pro</text>
+
+      <line x1="8" y1="180" x2="374" y2="180" stroke="var(--rule)"/>
+      <text class="ax" x="8" y="200" fill="var(--accent)">측정 방식</text>
+      <text class="axl" x="8" y="222" style="font-size:11px">벤치마크마다 <tspan font-weight="600" fill="var(--ink)">초기 하네스 H₀</tspan>를 오픈소스에서 하나 정하고 출발</text>
+      <text class="axl" x="8" y="242" style="font-size:11px">태스크를 학습 / 검증 / 홀드아웃 테스트로 분할</text>
+      <text class="axl" x="8" y="262" style="font-size:11px">지표는 <tspan font-weight="600" fill="var(--ink)">과제 완수율(TCR)</tspan> · 모든 값은 <tspan font-weight="600" fill="var(--ink)">3회 독립 실행 평균</tspan></text>
+
+      <line x1="390" y1="196" x2="390" y2="268" stroke="var(--rule)"/>
+      <text class="ax" x="406" y="200" fill="var(--accent)">비교 대상</text>
+      <text class="axl" x="406" y="222" style="font-size:11px"><tspan font-weight="600" fill="var(--ink)">사람이 설계한 하네스</tspan> — DeepResearchAgent, MiroFlow,</text>
+      <text class="axl" x="406" y="240" style="font-size:11px">OpenHands, Trae-Agent, CUGA, OpenCode</text>
+      <text class="axl" x="406" y="262" style="font-size:11px"><tspan font-weight="600" fill="var(--ink)">자기진화·수리 방식</tspan> — GEPA, SCOPE, ReCoder, Meta-Harness</text>
+    </svg>
+  </div>
+  </section>
+
+<!-- 10 RQ1 -->
+<section class="slide" data-title="RQ1 — 모델을 안 바꾸고 +6~18%">
+  <span class="eyebrow">RQ1 · 효과성</span>
+  <h2>다섯 모델 × 네 벤치마크에서 <em>일관되게</em> 오릅니다</h2>
+  <div class="fig pad">
+    <svg viewBox="0 0 760 292" role="img" aria-label="GAIA SWE AppWorld Terminal-Bench 네 벤치마크에서 Claude Sonnet 4.5 기준 성능 향상">
+      <g stroke="var(--grid)" stroke-width="1">
+        <line x1="86" y1="36" x2="700" y2="36"/><line x1="86" y1="84" x2="700" y2="84"/>
+        <line x1="86" y1="132" x2="700" y2="132"/><line x1="86" y1="180" x2="700" y2="180"/>
+        <line x1="86" y1="228" x2="700" y2="228"/>
+      </g>
+      <g class="ax" text-anchor="end">
+        <text x="76" y="40">100</text><text x="76" y="88">80</text><text x="76" y="136">60</text>
+        <text x="76" y="184">40</text><text x="76" y="232">20</text><text x="76" y="280">0</text>
+      </g>
+      <text class="axl" x="8" y="22">과제 완수율 (TCR, %) · Claude Sonnet 4.5 기준</text>
+      <line x1="86" y1="276" x2="700" y2="276" stroke="var(--axis)" stroke-width="1.5"/>
+
+      <rect x="126" y="116" width="56" height="160" rx="3" fill="var(--ink-3)"/>
+      <text class="dl" x="154" y="108" text-anchor="middle" style="font-size:11.5px">66.7</text>
+      <rect x="186" y="73" width="56" height="203" rx="3" fill="var(--accent)"/>
+      <text class="dl" x="214" y="65" text-anchor="middle" fill="var(--accent)" style="font-size:11.5px">84.4</text>
+      <text class="dl-s" x="184" y="294" text-anchor="middle">GAIA <tspan fill="var(--accent)" font-weight="600">+17.7</tspan></text>
+
+      <rect x="274" y="129" width="56" height="147" rx="3" fill="var(--ink-3)"/>
+      <text class="dl" x="302" y="121" text-anchor="middle" style="font-size:11.5px">61.3</text>
+      <rect x="334" y="104" width="56" height="172" rx="3" fill="var(--accent)"/>
+      <text class="dl" x="362" y="96" text-anchor="middle" fill="var(--accent)" style="font-size:11.5px">71.7</text>
+      <text class="dl-s" x="332" y="294" text-anchor="middle">SWE-Bench <tspan fill="var(--accent)" font-weight="600">+10.4</tspan></text>
+
+      <rect x="422" y="129" width="56" height="147" rx="3" fill="var(--ink-3)"/>
+      <text class="dl" x="450" y="121" text-anchor="middle" style="font-size:11.5px">61.1</text>
+      <rect x="482" y="107" width="56" height="169" rx="3" fill="var(--accent)"/>
+      <text class="dl" x="510" y="99" text-anchor="middle" fill="var(--accent)" style="font-size:11.5px">70.4</text>
+      <text class="dl-s" x="480" y="294" text-anchor="middle">AppWorld <tspan fill="var(--accent)" font-weight="600">+9.3</tspan></text>
+
+      <rect x="570" y="194" width="56" height="82" rx="3" fill="var(--ink-3)"/>
+      <text class="dl" x="598" y="186" text-anchor="middle" style="font-size:11.5px">34.3</text>
+      <rect x="630" y="163" width="56" height="113" rx="3" fill="var(--accent)"/>
+      <text class="dl" x="658" y="155" text-anchor="middle" fill="var(--accent)" style="font-size:11.5px">47.1</text>
+      <text class="dl-s" x="628" y="294" text-anchor="middle">Terminal-Bench 2 <tspan fill="var(--accent)" font-weight="600">+12.7</tspan></text>
+    </svg>
+  </div>
+  <div class="punch">
+    <p>전체 평균 <strong>+11.1%</strong>. 회색이 초기 하네스 H₀, 파랑이 HarnessFix 적용 후입니다.
+    <strong>모델별 편차가 작습니다</strong> — 다섯 모델 각각의 평균 향상이 10.3~12.5% 사이.
+    그리고 <strong>사람이 설계한 하네스보다 평균 6.3% 높습니다</strong>, 수작업 설계 노력 없이.</p>
+  </div>
+  </section>
+
+<!-- 11 RQ2 -->
+<section class="slide" data-title="RQ2 — 표현을 바꾸면 진단이 달라진다">
+  <span class="eyebrow">RQ2 · 실패 진단</span>
+  <h2>같은 트레이스라도 <em>어떻게 표현하느냐</em>가 진단 정확도를 가른다</h2>
+  <div class="fig pad">
+    <svg viewBox="0 0 760 296" role="img" aria-label="원시 트레이스만 주면 진단 정확도가 50에서 58퍼센트지만 전체 HTIR을 주면 81에서 86퍼센트로 오른다">
+      <g stroke="var(--grid)" stroke-width="1">
+        <line x1="86" y1="36" x2="700" y2="36"/><line x1="86" y1="84" x2="700" y2="84"/>
+        <line x1="86" y1="132" x2="700" y2="132"/><line x1="86" y1="180" x2="700" y2="180"/>
+      </g>
+      <g class="ax" text-anchor="end">
+        <text x="76" y="40">100%</text><text x="76" y="88">80%</text><text x="76" y="136">60%</text><text x="76" y="184">40%</text><text x="76" y="232">20%</text>
+      </g>
+      <text class="axl" x="8" y="22">진단 정확도 (사람 주석 정답 대비)</text>
+      <line x1="86" y1="228" x2="700" y2="228" stroke="var(--axis)" stroke-width="1.5"/>
+
+      <path d="M140,144 L262,147 L384,156 L506,136 L628,151" fill="none" stroke="var(--ink-3)" stroke-width="2.5"/>
+      <text class="dl" x="636" y="154" fill="var(--ink-3)" style="font-size:11.5px">원시 트레이스</text>
+      <path d="M140,108 L262,111 L384,120 L506,100 L628,117" fill="none" stroke="var(--accent)" stroke-width="2.5" opacity=".45"/>
+      <text class="dl" x="636" y="120" fill="var(--accent)" style="font-size:11.5px" opacity=".7">+ 데이터흐름</text>
+      <path d="M140,90 L262,96 L384,102 L506,85 L628,99" fill="none" stroke="var(--accent)" stroke-width="2.5" opacity=".7"/>
+      <text class="dl" x="636" y="88" fill="var(--accent)" style="font-size:11.5px" opacity=".85">+ 제어흐름</text>
+      <path d="M140,72 L262,75 L384,81 L506,69 L628,80" fill="none" stroke="var(--accent)" stroke-width="3"/>
+      <text class="dl" x="636" y="66" fill="var(--accent)" style="font-size:12px" font-weight="600">전체 HTIR</text>
+
+      <g class="dl-s" text-anchor="middle" style="font-size:11px">
+        <text x="140" y="250">책임 스텝</text><text x="262" y="250">근본 원인</text><text x="384" y="250">구현 앵커</text>
+        <text x="506" y="250">계층</text><text x="628" y="250">수리 연산자</text>
+      </g>
+      <g class="ax" text-anchor="middle">
+        <text x="140" y="268">55.0 → 85.0</text><text x="262" y="268">53.8 → 83.8</text><text x="384" y="268">50.0 → 81.3</text>
+        <text x="506" y="268">58.4 → 86.2</text><text x="628" y="268">51.3 → 82.5</text>
+      </g>
+      <text class="anno" x="86" y="290">가로축은 진단이 맞혀야 하는 다섯 가지 — 어느 스텝이 책임인지, 왜인지, 구현 어디인지, 어느 계층인지, 어떤 수리가 필요한지</text>
+    </svg>
+  </div>
+  <div class="punch">
+    <p>원시 트레이스만 던져주면 진단이 <strong>동전 던지기 수준(50~58%)</strong>입니다.
+    데이터흐름을 붙이고, 제어흐름을 붙이고, 하네스 산출물과 정렬하면 <strong>81~86%</strong>로 올라갑니다.
+    <strong>정보가 늘어난 게 아니라 구조가 생긴 것입니다.</strong></p>
+  </div>
+  </section>
+
+<!-- 12 RQ3 -->
+<section class="slide" data-title="RQ3 — 프롬프트만 고치면 이득의 1/3">
+  <span class="eyebrow">RQ3 · 어블레이션 — 이 논문의 핵심 결과</span>
+  <h2><span class="warn">프롬프트 튜닝으로는 이득의 3분의 1밖에</span> 못 가져옵니다</h2>
+  <div class="fig pad">
+    <svg viewBox="0 0 760 288" role="img" aria-label="GAIA 기준 초기 하네스 43.3에서 프롬프트만 고치면 50.6 전체 HarnessFix는 61.7">
+      <g stroke="var(--grid)" stroke-width="1">
+        <line x1="240" y1="34" x2="700" y2="34"/><line x1="240" y1="94" x2="700" y2="94"/>
+        <line x1="240" y1="154" x2="700" y2="154"/><line x1="240" y1="214" x2="700" y2="214"/>
+      </g>
+      <text class="ax" x="8" y="18">GAIA · GPT-5 mini · 과제 완수율(%)</text>
+      <line x1="240" y1="34" x2="240" y2="250" stroke="var(--axis)" stroke-width="1.5"/>
+      <g class="ax" text-anchor="middle">
+        <text x="240" y="268">0</text><text x="371" y="268">20</text><text x="503" y="268">40</text><text x="634" y="268">60</text>
+      </g>
+
+      <rect x="240" y="44" width="285" height="26" rx="3" fill="var(--ink-3)" opacity=".55"/>
+      <text class="dl-s" x="232" y="62" text-anchor="end" style="font-size:11.5px">초기 하네스 H₀</text>
+      <text class="dl" x="535" y="62" style="font-size:12px">43.3</text>
+
+      <rect x="240" y="80" width="333" height="26" rx="3" fill="var(--signal)"/>
+      <text class="dl-s" x="232" y="98" text-anchor="end" style="font-size:11.5px" font-weight="600">프롬프트만 수리</text>
+      <text class="dl" x="583" y="98" fill="var(--signal)" style="font-size:12px">50.6</text>
+
+      <rect x="240" y="116" width="336" height="26" rx="3" fill="var(--ink-3)" opacity=".7"/>
+      <text class="dl-s" x="232" y="134" text-anchor="end" style="font-size:11.5px">트레이스 기반 진단 없이</text>
+      <text class="dl" x="586" y="134" style="font-size:12px">51.1</text>
+
+      <rect x="240" y="152" width="333" height="26" rx="3" fill="var(--ink-3)" opacity=".7"/>
+      <text class="dl-s" x="232" y="170" text-anchor="end" style="font-size:11.5px">범위 좁힌 연산자 없이</text>
+      <text class="dl" x="583" y="170" style="font-size:12px">50.6</text>
+
+      <rect x="240" y="188" width="365" height="26" rx="3" fill="var(--ink-3)" opacity=".85"/>
+      <text class="dl-s" x="232" y="206" text-anchor="end" style="font-size:11.5px">회귀 인지 수용 없이</text>
+      <text class="dl" x="615" y="206" style="font-size:12px">55.6</text>
+
+      <rect x="240" y="224" width="405" height="26" rx="3" fill="var(--accent)"/>
+      <text class="dl-s" x="232" y="242" text-anchor="end" style="font-size:11.5px" font-weight="600" fill="var(--accent)">전체 HarnessFix</text>
+      <text class="dl" x="655" y="242" fill="var(--accent)" style="font-size:12px">61.7</text>
+
+      <path d="M525,44 L525,250" stroke="var(--rule-strong)" stroke-width="1" stroke-dasharray="3 3"/>
+      <text class="anno" x="600" y="24" fill="var(--signal)" font-weight="600">프롬프트 +7.3</text>
+      <text class="anno" x="690" y="24" fill="var(--accent)" font-weight="600">전체 +18.4</text>
+    </svg>
+  </div>
+  <div class="punch warn">
+    <p>가장 크게 깎이는 어블레이션이 <strong>프롬프트만 수리</strong>와 <strong>범위 좁힌 연산자 제거</strong>입니다.
+    저자들의 결론: <strong>효과적인 하네스 수리는 런타임 메커니즘을 정확히 겨냥해 바꾸는 데 달려 있습니다.</strong>
+    참고로 기존 방식들은 대부분 <strong>7계층 중 1~2개만</strong> 건드립니다.</p>
+  </div>
+  </section>
+
+<!-- 13 RQ4 -->
+<section class="slide" data-title="RQ4 — 수리가 다른 모델로 옮겨간다">
+  <span class="eyebrow">RQ4 · 교차 모델 전이</span>
+  <h2>한 모델로 만든 수리가 <em>다른 모델에서도 듣습니다</em></h2>
+  <p class="lead">
+    GPT-5 mini로 만든 수리를 <b>대상 모델별 재수리 없이 그대로</b> 적용한 결과입니다.
+  </p>
+  <div class="fig pad">
+    <svg viewBox="0 0 760 248" role="img" aria-label="GPT-5 mini로 만든 하네스 수리를 다른 네 모델에 적용했을 때의 향상폭">
+      <text class="ax" x="8" y="18">GAIA · 과제 완수율(%)</text>
+      <line x1="200" y1="30" x2="200" y2="222" stroke="var(--axis)" stroke-width="1.5"/>
+
+      <rect x="200" y="40" width="173" height="26" rx="3" fill="var(--ink-3)" opacity=".5"/>
+      <rect x="373" y="40" width="74" height="26" rx="3" fill="var(--accent)"/>
+      <text class="dl-s" x="192" y="58" text-anchor="end" style="font-size:11.5px" font-weight="600">GPT-5 mini <tspan fill="var(--ink-3)" font-weight="400">(수리 출처)</tspan></text>
+      <text class="dl" x="457" y="58" fill="var(--accent)" style="font-size:12px">43.3 → 61.7</text>
+      <text class="dl" x="600" y="58" fill="var(--accent)" style="font-size:12px" font-weight="600">+18.4</text>
+
+      <rect x="200" y="76" width="267" height="26" rx="3" fill="var(--ink-3)" opacity=".5"/>
+      <rect x="467" y="76" width="22" height="26" rx="3" fill="var(--accent)"/>
+      <text class="dl-s" x="192" y="94" text-anchor="end" style="font-size:11.5px">Claude Sonnet 4.5</text>
+      <text class="dl" x="499" y="94" style="font-size:12px">66.7 → 72.2</text>
+      <text class="dl" x="600" y="94" fill="var(--accent)" style="font-size:12px">+5.5</text>
+
+      <rect x="200" y="112" width="236" height="26" rx="3" fill="var(--ink-3)" opacity=".5"/>
+      <rect x="436" y="112" width="31" height="26" rx="3" fill="var(--accent)"/>
+      <text class="dl-s" x="192" y="130" text-anchor="end" style="font-size:11.5px">DeepSeek V3.2</text>
+      <text class="dl" x="477" y="130" style="font-size:12px">58.9 → 66.7</text>
+      <text class="dl" x="600" y="130" fill="var(--accent)" style="font-size:12px">+7.8</text>
+
+      <rect x="200" y="148" width="253" height="26" rx="3" fill="var(--ink-3)" opacity=".5"/>
+      <rect x="453" y="148" width="38" height="26" rx="3" fill="var(--accent)"/>
+      <text class="dl-s" x="192" y="166" text-anchor="end" style="font-size:11.5px">Qwen3.5 Plus</text>
+      <text class="dl" x="501" y="166" style="font-size:12px">63.3 → 72.8</text>
+      <text class="dl" x="600" y="166" fill="var(--accent)" style="font-size:12px">+9.5</text>
+
+      <rect x="200" y="184" width="278" height="26" rx="3" fill="var(--ink-3)" opacity=".5"/>
+      <rect x="478" y="184" width="36" height="26" rx="3" fill="var(--accent)"/>
+      <text class="dl-s" x="192" y="202" text-anchor="end" style="font-size:11.5px">Gemini 3 Pro</text>
+      <text class="dl" x="524" y="202" style="font-size:12px">69.4 → 78.3</text>
+      <text class="dl" x="600" y="202" fill="var(--accent)" style="font-size:12px">+8.9</text>
+
+      <line x1="8" y1="232" x2="752" y2="232" stroke="var(--rule)"/>
+    </svg>
+  </div>
+  <div class="punch">
+    <p>출처 모델에서 이득이 가장 크지만(+18.4), <strong>나머지 네 모델에서도 +5.5~9.5가 남습니다.</strong>
+    하네스 결함이 <strong>모델에 종속적이지 않다</strong>는 뜻입니다 — 모델을 바꿔도 하네스 투자가 날아가지 않습니다.</p>
+  </div>
+  </section>
+
+<!-- 14 conclusion -->
+<section class="slide" data-title="결론과 한계">
+  <span class="eyebrow">결론</span>
+  <h2>이 논문이 내린 결론, 그리고 <em>감안할 것</em></h2>
+  <div class="two">
+    <div>
+      <h3 style="color:var(--accent)">결론</h3>
+      <ul class="pts" style="gap:clamp(6px,1.2vmin,14px)">
+        <li style="font-size:clamp(12px,1.75vmin,19px)"><strong>실패 궤적은 피드백 신호가 아니라 진단 증거로 쓸 수 있습니다.</strong> 그렇게 쓰면 어느 계층의 무엇이 문제인지 짚어낼 수 있습니다</li>
+        <li style="font-size:clamp(12px,1.75vmin,19px)"><strong>하네스 수리는 다층 런타임 인프라 문제입니다.</strong> 한 계층만 고쳐서는 이득의 일부만 가져옵니다</li>
+        <li style="font-size:clamp(12px,1.75vmin,19px)"><strong>모델을 건드리지 않고 +6.3~18.4%</strong>, 사람이 설계한 하네스보다 평균 6.3% 높게, 그리고 <strong>다른 모델로도 전이</strong>됩니다</li>
+      </ul>
+    </div>
+    <div>
+      <h3 style="color:var(--signal)">한계</h3>
+      <ul class="pts" style="gap:clamp(6px,1.2vmin,14px)">
+        <li class="warn" style="font-size:clamp(12px,1.75vmin,19px)"><strong>초기 하네스 H₀에 결과가 크게 좌우됩니다.</strong> 오픈소스 하네스가 출발점이었습니다. 이미 잘 다듬어진 사내 하네스라면 같은 향상폭을 보장할 수 없습니다</li>
+        <li class="warn" style="font-size:clamp(12px,1.75vmin,19px)"><strong>진단 평가셋이 작습니다.</strong> 벤치마크마다 실패 궤적 20개, 주석자 3명</li>
+        <li class="warn" style="font-size:clamp(12px,1.75vmin,19px)"><strong>비용 비교가 없습니다.</strong> HTIR 생성·진단·검증 자체가 LLM 호출입니다</li>
+      </ul>
+    </div>
+  </div>
+  <div class="punch">
+    <p>가장 견고한 두 가지는 <strong>① 하네스 7계층 분류</strong>와 <strong>② “프롬프트 수리는 이득의 일부일 뿐”이라는 어블레이션 결과</strong>입니다.
+    이 둘은 특정 벤치마크 숫자에 기대지 않고, <strong>성격이 전혀 다른 네 과제에서 일관되게</strong> 나타났습니다.</p>
+  </div>
+  </section>
+
+</div>
+
+<!-- ════════ chrome ════════ -->
+<div class="bar">
+  <button id="prev" type="button" aria-label="이전 슬라이드">←</button>
+  <button id="next" type="button" aria-label="다음 슬라이드">→</button>
+  <div class="prog" aria-hidden="true"><i id="pbar"></i></div>
+  <span class="num" id="num">1 / 14</span>
+  <button id="btn-ov" type="button">목차</button>
+</div>
+
+<div class="ov" id="ov" role="dialog" aria-label="슬라이드 목차">
+  <h3>목차 — 클릭하면 이동합니다 <span style="color:var(--ink-3);font-weight:400">(Esc 닫기)</span></h3>
+  <div class="grid" id="ovgrid"></div>
+</div>
+
+<script>
+/* deck.js — CS329A 계열 슬라이드 덱 공용 동작
+   키보드(→ ← Space PageUp/Down Home End O S F) · 터치 스와이프 · 목차 · 노트 토글
+   슬라이드는 .slide, 제목은 data-title 속성에서 읽습니다. */
+
+(function(){
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var total = slides.length;
+  var cur = 0;
+  var ov = document.getElementById('ov');
+  var grid = document.getElementById('ovgrid');
+  var num = document.getElementById('num');
+  var pbar = document.getElementById('pbar');
+
+  // build overview
+  slides.forEach(function(s, i){
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.innerHTML = '<span class="n">' + String(i+1).padStart(2,'0') + '</span>' +
+                  '<span class="t">' + (s.getAttribute('data-title') || '') + '</span>';
+    b.addEventListener('click', function(){ go(i); closeOv(); });
+    grid.appendChild(b);
+  });
+  var ovButtons = Array.prototype.slice.call(grid.children);
+
+  function render(){
+    slides.forEach(function(s,i){ s.classList.toggle('on', i === cur); });
+    ovButtons.forEach(function(b,i){ b.classList.toggle('cur', i === cur); });
+    num.textContent = (cur+1) + ' / ' + total;
+    pbar.style.width = ((cur+1)/total*100) + '%';
+    var s = slides[cur];
+    if (s) s.scrollTop = 0;
+    var q = s && s.querySelector('.qas');
+    if (q) q.scrollTop = 0;
+    try { location.replace('#' + (cur+1)); } catch(e){}
+  }
+  function go(i){ cur = Math.max(0, Math.min(total-1, i)); render(); }
+  function next(){ go(cur+1); }
+  function prev(){ go(cur-1); }
+  function openOv(){ ov.classList.add('on'); }
+  function closeOv(){ ov.classList.remove('on'); }
+  function toggleOv(){ ov.classList.toggle('on'); }
+
+  document.getElementById('next').addEventListener('click', next);
+  document.getElementById('prev').addEventListener('click', prev);
+  document.getElementById('btn-ov').addEventListener('click', toggleOv);
+
+
+  document.addEventListener('keydown', function(e){
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    var k = e.key;
+    if (k === 'Escape'){ closeOv(); return; }
+    if (ov.classList.contains('on') && k !== 'o' && k !== 'O') return;
+    switch(k){
+      case 'ArrowRight': case 'ArrowDown': case ' ': case 'PageDown': case 'n':
+        e.preventDefault(); next(); break;
+      case 'ArrowLeft': case 'ArrowUp': case 'PageUp': case 'p':
+        e.preventDefault(); prev(); break;
+      case 'Home': e.preventDefault(); go(0); break;
+      case 'End': e.preventDefault(); go(total-1); break;
+      case 'o': case 'O': e.preventDefault(); toggleOv(); break;
+      case 'f': case 'F':
+        e.preventDefault();
+        if (document.fullscreenElement) { document.exitFullscreen(); }
+        else if (document.documentElement.requestFullscreen) { document.documentElement.requestFullscreen(); }
+        break;
+    }
+  });
+
+  // touch swipe
+  var x0 = null, y0 = null;
+  document.addEventListener('touchstart', function(e){
+    if (e.touches.length !== 1) return;
+    x0 = e.touches[0].clientX; y0 = e.touches[0].clientY;
+  }, {passive:true});
+  document.addEventListener('touchend', function(e){
+    if (x0 === null) return;
+    var t = e.changedTouches[0];
+    var dx = t.clientX - x0, dy = t.clientY - y0;
+    if (Math.abs(dx) > 55 && Math.abs(dx) > Math.abs(dy)) { dx < 0 ? next() : prev(); }
+    x0 = y0 = null;
+  }, {passive:true});
+
+  // deep link
+  var h = parseInt((location.hash || '').replace('#',''), 10);
+  if (h >= 1 && h <= total) cur = h - 1;
+  render();
+})();
+</script>
+</body>
+</html>
